@@ -13,7 +13,13 @@ public class TodoRepo {
 
     private final Map<String, Todo> todos = new HashMap<>();
 
+
     public List<Todo> getAllTodos() {
         return new ArrayList<>(todos.values());
+    }
+
+    public Todo save(Todo todoToSave) {
+        todos.put(todoToSave.id(), todoToSave);
+        return todoToSave;
     }
 }
