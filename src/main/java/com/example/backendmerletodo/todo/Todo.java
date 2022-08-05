@@ -1,4 +1,4 @@
 package com.example.backendmerletodo.todo;
 
-public record Todo(String name, String todo) {
+public record Todo(String description, TodoStatus status) {
 }

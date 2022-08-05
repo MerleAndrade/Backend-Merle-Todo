@@ -14,9 +14,9 @@ class TodoServiceTest {
     TodoService todoService = new TodoService(todoRepo);
 
     private final List<Todo> todoList = List.of(
-            new Todo("123", "Wäsche waschen"),
-            new Todo("456", "Tisch decken"),
-            new Todo("789", "Wohnzimmer saugen")
+            new Todo("123", TodoStatus.OPEN),
+            new Todo("456", TodoStatus.OPEN),
+            new Todo("789", TodoStatus.OPEN)
     );
 
     @Test
