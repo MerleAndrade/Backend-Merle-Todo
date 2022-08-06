@@ -1,12 +1,17 @@
 package com.example.backendmerletodo;
 
+import com.example.backendmerletodo.todo.Todo;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -17,9 +22,13 @@ public class TodoIntegrationTest {
     @Autowired
     MockMvc mockMvc;
 
+    @Autowired
+    ObjectMapper objectMapper;
+
     @Test
     void expectEmptyListOnGet() throws Exception {
-        mockMvc.perform(get("http://localhost:3000/api/todo"))
+        mockMvc.perform(
+                        get("http://localhost:3000/api/todo"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("""
                         []
@@ -27,5 +36,141 @@ public class TodoIntegrationTest {
 
     }
 
+    @DirtiesContext
+    @Test
+    void expectSuccessfulPost() throws Exception {
+        String actual = mockMvc.perform(
+                        post("http://localhost:3000/api/todo")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                           "description": "Wäsche waschen",
+                                            "status": "OPEN"
+                                        }
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {
+                            "description": "Wäsche waschen",
+                            "status": "OPEN"
+                        }
+                        """))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        Todo actualTodo = objectMapper.readValue(actual, Todo.class);
+        assertThat(actualTodo.id())
+                .isNotBlank();
+    }
+
+    @DirtiesContext
+    @Test
+    void expectSuccessfulPut() throws Exception {
+        String saveResult = mockMvc.perform(
+                        post("http://localhost:8080/api/todo")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {"description":"Nächsten Endpunkt implementieren","status":"OPEN"}
+                                        """)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {
+                          "description": "Nächsten Endpunkt implementieren",
+                          "status": "OPEN"
+                        }
+                        """))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Todo saveResultTodo = objectMapper.readValue(saveResult, Todo.class);
+        String id = saveResultTodo.id();
+
+        mockMvc.perform(
+                        put("http://localhost:8080/api/todo/" + id + "/update")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {"id":"<ID>","description":"Bla","status":"IN_PROGRESS"}
+                                        """.replaceFirst("<ID>", id))
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {
+                          "id": "<ID>",
+                          "description": "Bla",
+                          "status": "IN_PROGRESS"
+                        }
+                        """.replaceFirst("<ID>", id)));
+
+    }
+
+    @DirtiesContext
+    @Test
+    void expectTodoOnGetById() throws Exception {
+
+        String actual = mockMvc.perform(
+                        post("http://localhost:3000/api/todo")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                           "description": "Wäsche waschen",
+                                            "status": "OPEN"
+                                        }
+                                        """))
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {
+                            "description": "Wäsche waschen",
+                            "status": "OPEN"
+                        }
+                        """))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Todo actualTodo = objectMapper.readValue(actual, Todo.class);
+        String id = actualTodo.id();
+
+        mockMvc.perform(
+                        get("http://localhost:3000/api/todo/" + id))
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                            {
+                                    "id": "<ID>",
+                                    "description": "Wäsche waschen",
+                                    "status": "OPEN"
+                                }
+                        """.replaceFirst("<ID>", id)));
+
+    }
+
+    @DirtiesContext
+    @Test
+    void expectTotalDelete() throws Exception {
+        String saveResult = mockMvc.perform(
+                        post("http://localhost:8080/api/todo")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {"description":"Nächsten Endpunkt implementieren","status":"OPEN"}
+                                        """)
+                )
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Todo saveResultTodo = objectMapper.readValue(saveResult, Todo.class);
+        String id = saveResultTodo.id();
+
+        mockMvc.perform(delete("http://localhost:8080/api/todo/" + id))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("http://localhost:8080/api/todo"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        []
+                        """));
+    }
 }
+
 

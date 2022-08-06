@@ -16,4 +16,22 @@ public class TodoRepo {
     public List<Todo> getAllTodos() {
         return new ArrayList<>(todos.values());
     }
+
+    public Todo save(Todo todoToSave) {
+        todos.put(todoToSave.id(), todoToSave);
+        return todoToSave;
+    }
+
+    public Todo getById(String id) {
+        return todos.get(id);
+    }
+
+    public Todo update(Todo todo) {
+        todos.put(todo.id(), todo);
+        return todo;
+    }
+
+    public void delete(String id) {
+        todos.remove(id);
+    }
 }
